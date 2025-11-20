@@ -38,6 +38,9 @@ describe("EncryptedHabitMoodTracker", function () {
     ({ contract, contractAddress } = await deployFixture());
   });
 
+  it("should return 0 day count for new user", async function () {
+    expect(await contract.getDayCount(signers.alice.address)).to.eq(0);
+  });
 
   it("should batch add multiple records successfully", async function () {
     const moods = [3, 4, 2];
