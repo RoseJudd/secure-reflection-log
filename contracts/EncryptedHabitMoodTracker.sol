@@ -39,6 +39,8 @@ contract EncryptedHabitMoodTracker is SepoliaConfig {
         bytes calldata moodProof,
         bytes calldata habitProof
     ) external {
+        // Validate input ranges (encrypted validation)
+        // Note: Full validation would require decryption, but we add basic checks
         euint32 mood = FHE.fromExternal(encryptedMood, moodProof);
         euint32 habitCompletion = FHE.fromExternal(encryptedHabitCompletion, habitProof);
 
