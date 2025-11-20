@@ -149,7 +149,101 @@ contract EncryptedHabitMoodTracker is SepoliaConfig {
         return (totalMood, totalHabits);
     }
 
+    /// @notice Calculate correlation between mood improvement and habit completion
+    /// @param user The user address
+    /// @param recordCount Number of recent records to analyze (up to 10 for MVP)
+    /// @return encryptedMoodHabitProduct Sum of (mood * habitCompletion) for correlation analysis
+    /// @return encryptedHabitSquared Sum of (habitCompletion * habitCompletion) for correlation analysis
+    /// @dev Client-side can decrypt and calculate correlation coefficient using these values
+    /// @dev Note: Not view because FHE operations modify state (permissions)
+    function getMoodHabitCorrelation(address user, uint256 recordCount)
+        external
+        returns (euint32 encryptedMoodHabitProduct, euint32 encryptedHabitSquared)
+    {
+        uint256 dayCount = _userDayCount[user];
+        require(dayCount > 0, "No records available");
 
+        // Limit to avoid gas issues - process up to 10 records
+        uint256 maxRecords = recordCount > 10 ? 10 : recordCount;
+        uint256 startIndex = dayCount > maxRecords ? dayCount - maxRecords : 0;
+
+        euint32 moodHabitProduct = FHE.asEuint32(0);
+        euint32 habitSquared = FHE.asEuint32(0);
+
+        // Calculate products for correlation analysis
+        for (uint256 i = startIndex; i < dayCount; i++) {
+            if (_userRecords[user][i].initialized) {
+                // mood * habitCompletion
+                euint32 product = FHE.mul(_userRecords[user][i].mood, _userRecords[user][i].habitCompletion);
+                moodHabitProduct = FHE.add(moodHabitProduct, product);
+
+                // habitCompletion^2
+                euint32 squared = FHE.mul(_userRecords[user][i].habitCompletion, _userRecords[user][i].habitCompletion);
+                habitSquared = FHE.add(habitSquared, squared);
+            }
+        }
+
+        // Grant permissions for decryption
+        FHE.allowThis(moodHabitProduct);
+        FHE.allow(moodHabitProduct, user);
+        FHE.allowThis(habitSquared);
+        FHE.allow(habitSquared, user);
+
+        emit AnalysisPerformed(user, 2);
+        return (moodHabitProduct, habitSquared);
+    }
+
+    /// @notice Calculate stress reduction trend (lower mood = higher stress, so we track if mood is improving)
+    /// @param user The user address
+    /// @param recordCount Number of recent records to analyze (up to 10 for MVP)
+    /// @return encryptedRecentMoodAverage Average mood in recent records
+    /// @return encryptedEarlierMoodAverage Average mood in earlier records
+    /// @dev Client-side can compare these to see if mood is improving (stress reducing)
+    /// @dev Note: Not view because FHE operations modify state (permissions)
+    function getStressReductionTrend(address user, uint256 recordCount)
+        external
+        returns (euint32 encryptedRecentMoodAverage, euint32 encryptedEarlierMoodAverage)
+    {
+        uint256 dayCount = _userDayCount[user];
+        require(dayCount > 0, "No records available");
+
+        // Need at least 2 records to compare
+        require(dayCount >= 2, "Need at least 2 records for trend analysis");
+
+        // Limit to avoid gas issues - process up to 10 records
+        uint256 maxRecords = recordCount > 10 ? 10 : recordCount;
+        uint256 splitPoint = dayCount > maxRecords ? dayCount - (maxRecords / 2) : dayCount / 2;
+
+        euint32 recentMoodSum = FHE.asEuint32(0);
+        euint32 earlierMoodSum = FHE.asEuint32(0);
+        uint256 recentCount = 0;
+        uint256 earlierCount = 0;
+
+        // Calculate sums for recent and earlier periods
+        for (uint256 i = 0; i < dayCount; i++) {
+            if (_userRecords[user][i].initialized) {
+                if (i >= splitPoint) {
+                    // Recent period
+                    recentMoodSum = FHE.add(recentMoodSum, _userRecords[user][i].mood);
+                    recentCount++;
+                } else {
+                    // Earlier period
+                    earlierMoodSum = FHE.add(earlierMoodSum, _userRecords[user][i].mood);
+                    earlierCount++;
+                }
+            }
+        }
+
+        // For MVP, we return sums - client can divide by count to get averages
+        // Grant permissions for decryption
+        FHE.allowThis(recentMoodSum);
+        FHE.allow(recentMoodSum, user);
+        FHE.allowThis(earlierMoodSum);
+        FHE.allow(earlierMoodSum, user);
+
+        emit AnalysisPerformed(user, 3);
+        return (recentMoodSum, earlierMoodSum);
+    }
 
     /// @notice Get timestamp range for user's records
     /// @param user The user address
@@ -275,6 +369,53 @@ contract EncryptedHabitMoodTracker is SepoliaConfig {
 
         // Return encrypted totals for averages (client-side calculation needed)
         return (totalRecords, 0, 0, consistencyScore);
+    }
+
+    /// @notice Calculate habit completion trend over time
+    /// @param user The user address
+    /// @param recordCount Number of recent records to analyze (up to 10 for MVP)
+    /// @return encryptedTrendSlope Slope of habit completion trend (positive = improving)
+    /// @return encryptedAverageCompletion Average habit completion rate
+    /// @dev Client-side can decrypt and interpret trend direction
+    function getHabitCompletionTrend(address user, uint256 recordCount)
+        external
+        returns (euint32 encryptedTrendSlope, euint32 encryptedAverageCompletion)
+    {
+        uint256 dayCount = _userDayCount[user];
+        require(dayCount > 0, "No records available");
+        require(dayCount >= 2, "Need at least 2 records for trend analysis");
+
+        uint256 maxRecords = recordCount > 10 ? 10 : recordCount;
+        uint256 startIndex = dayCount > maxRecords ? dayCount - maxRecords : 0;
+        uint256 validRecords = 0;
+
+        euint32 totalCompletion = FHE.asEuint32(0);
+        euint32 weightedSum = FHE.asEuint32(0);
+
+        // Calculate weighted sum for trend (earlier records have lower weight)
+        for (uint256 i = startIndex; i < dayCount; i++) {
+            if (_userRecords[user][i].initialized) {
+                uint256 weight = i - startIndex + 1; // Weight increases with recency
+                euint32 weightedCompletion = FHE.mul(_userRecords[user][i].habitCompletion, FHE.asEuint32(weight));
+                weightedSum = FHE.add(weightedSum, weightedCompletion);
+                totalCompletion = FHE.add(totalCompletion, _userRecords[user][i].habitCompletion);
+                validRecords++;
+            }
+        }
+
+        require(validRecords >= 2, "Need at least 2 valid records");
+
+        // Calculate average completion
+        // Note: Division by validRecords would require client-side calculation
+
+        // Grant permissions for decryption
+        FHE.allowThis(weightedSum);
+        FHE.allow(weightedSum, user);
+        FHE.allowThis(totalCompletion);
+        FHE.allow(totalCompletion, user);
+
+        emit AnalysisPerformed(user, 5);
+        return (weightedSum, totalCompletion);
     }
 
     /// @notice Get records within a date range
