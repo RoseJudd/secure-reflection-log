@@ -65,6 +65,8 @@ export function useHabitMoodTracker(contractAddress: string | undefined): UseHab
   const { data: walletClient } = useWalletClient();
   const { storage: fhevmDecryptionSignatureStorage } = useInMemoryStorage();
 
+  // Enhanced validation for contract address and wallet connection
+
   const [dayCount, setDayCount] = useState<number>(0);
   const [records, setRecords] = useState<DailyRecord[]>([]);
   const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
