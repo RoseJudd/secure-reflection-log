@@ -18,6 +18,8 @@ A fully homomorphic encryption (FHE) based application for tracking habits and m
 - 🎨 **Modern UI**: Responsive React frontend with Tailwind CSS and Radix UI components
 - 📱 **Wallet Integration**: Rainbow Kit integration for seamless wallet connections
 - ⚡ **Performance Optimized**: IR-based compilation and optimized gas usage
+- 🧪 **Comprehensive Testing**: Edge case handling and robust error validation
+- 🔧 **Developer Friendly**: Enhanced tooling with gas reporting and analysis scripts
 
 ## Project Structure
 
