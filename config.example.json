@@ -1,0 +1,42 @@
+{
+  "name": "Reflection Log Configuration",
+  "version": "0.1.0",
+  "networks": {
+    "hardhat": {
+      "url": "http://127.0.0.1:8545",
+      "chainId": 31337,
+      "accounts": {
+        "mnemonic": "test test test test test test test test test test test junk"
+      }
+    },
+    "sepolia": {
+      "url": "https://sepolia.infura.io/v3/YOUR_INFURA_KEY",
+      "chainId": 11155111,
+      "accounts": {
+        "mnemonic": "test test test test test test test test test test test junk"
+      }
+    },
+    "mainnet": {
+      "url": "https://mainnet.infura.io/v3/YOUR_INFURA_KEY",
+      "chainId": 1,
+      "accounts": {
+        "mnemonic": "YOUR_MAINNET_MNEMONIC"
+      }
+    }
+  },
+  "fhevm": {
+    "oracleAddress": "0x0000000000000000000000000000000000000000",
+    "kmsVerifierAddress": "0x0000000000000000000000000000000000000000"
+  },
+  "frontend": {
+    "contractAddress": "0x0000000000000000000000000000000000000000",
+    "walletConnectProjectId": "YOUR_WALLETCONNECT_PROJECT_ID",
+    "defaultNetwork": "sepolia",
+    "supportedChains": [11155111, 1, 31337]
+  },
+  "development": {
+    "enableGasReporting": true,
+    "enableCoverage": false,
+    "verboseLogging": false
+  }
+}
