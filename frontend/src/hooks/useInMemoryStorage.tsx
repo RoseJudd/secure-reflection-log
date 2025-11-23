@@ -18,6 +18,8 @@ const InMemoryStorageContext = createContext<
 
 export const useInMemoryStorage = () => {
   const context = useContext(InMemoryStorageContext);
+
+  // Enhanced error handling for storage context
   if (!context) {
     throw new Error(
       "useInMemoryStorage must be used within a InMemoryStorageProvider"
