@@ -2,6 +2,12 @@
 
 A fully homomorphic encryption (FHE) based application for tracking habits and moods with complete privacy. All data remains encrypted even during analysis operations.
 
+## 🚀 Live Demo
+
+**Application**: [https://reflection-log1.vercel.app/](https://reflection-log1.vercel.app/)
+
+**Demo Video**: [https://github.com/RoseJudd/secure-reflection-log/blob/main/reflection.mp4](https://github.com/RoseJudd/secure-reflection-log/blob/main/reflection.mp4)
+
 ## Features
 
 - 🔐 **End-to-End Encryption**: Mood (1-5) and habit completion rate (0-100%) are encrypted on-chain
@@ -20,6 +26,7 @@ A fully homomorphic encryption (FHE) based application for tracking habits and m
 - ⚡ **Performance Optimized**: IR-based compilation and optimized gas usage
 - 🧪 **Comprehensive Testing**: Edge case handling and robust error validation
 - 🔧 **Developer Friendly**: Enhanced tooling with gas reporting and analysis scripts
+- 📹 **Demo Video**: Complete demonstration of encrypted habit tracking functionality
 
 ## Project Structure
 
