@@ -201,3 +201,8 @@ The contract includes comprehensive tests covering:
 
 BSD-3-Clause-Clear
 
+
+
+---
+
+**Built with ❤️ using [Zama FHEVM](https://www.zama.ai/)**
